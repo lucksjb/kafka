@@ -114,7 +114,21 @@ http://localhost:9021
 Permite que a gente defina o formato de uma mensagem (utilizando o avro)  
 
 
+## Extensões vscode 
+* streetsidesoftware.avro  
+** kafka landoop
+http://localhost:3030/
+
+http://localhost:3030/kafka-topics-ui/#/cluster/fast-data-dev/topic/n/topico-teste/data
+
+
+** para consumir 
+docker exec -it kafka_kafka-cluster_1 bash 
+kafka-avro-console-consumer --topic topico-teste --bootstrap-server=localhost:9092 --from-beginning --property schema.registry.url=http://127.0.0.1:8081
+
+
 ## Links interessantes 
+https://avro.apache.org/docs/current/gettingstartedjava.html
 https://programadev.com.br/kafka-producer-avro/   
 https://github.com/guilhermegarcia86/kafka-series/tree/avro/register   
 https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md &rarr; parâmetros de configuração

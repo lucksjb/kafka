@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "namespace": "com.example.producer",
+  "name": "Cliente",
+  "version": "1",
+  "fields": [
+    {
+      "name": "id",
+      "type": "int",
+      "doc": "id do cliente"
+    },
+    { 
+      "name": "nome",
+      "type": "string",
+      "doc": "Nome do cliente"
+    },
+    {
+      "name": "endereco",
+      "type": "string",
+      "doc": "endereco do cliente"
+    }
+  ]
+}
