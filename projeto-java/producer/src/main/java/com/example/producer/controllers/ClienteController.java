@@ -33,7 +33,7 @@ public class ClienteController {
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
         properties.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://127.0.0.1:8081");
-        properties.put("group.id","cliente-group-consumer");
+        // properties.put("group.id","cliente-group-consumer");
         		
 		try (Producer<String, Cliente> producer = new KafkaProducer<String, Cliente>(properties)) {
             Cliente cliente = Cliente.newBuilder()
@@ -41,9 +41,13 @@ public class ClienteController {
                     .setNome("Luciano Donizeti da silva ")
                     .setEndereco("Rua sao luiz 2086")
                     .build();
+            
+           
+            String topic = "topico-teste";
+            String key  = "key-teste-tudo-cai-nessa-mesma-particao";
 
-                    
-            producer.send(new ProducerRecord<>("topico-teste", cliente), (rm,ex) ->{
+                
+            producer.send(new ProducerRecord<>(topic, key, cliente), (rm,ex) ->{
                 if (ex == null) {
                     log.info("Data sent with success!!!");
                 } else {

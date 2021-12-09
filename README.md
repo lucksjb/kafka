@@ -61,23 +61,28 @@ As mensagnes são compostas por quatro partes :
 * At least once &rarr; (pelo menos uma vez a mensagem será entregue), performance moderada mas pode duplicar mensagens 
 * Exactly once (exatamente uma vez) &rarr; Pior performance, mas não perde as mensagens 
 
-### Producer indepotente  
-* Modo enable true &rarr; se ocorrer algo durante o processo de publicação da mensagem, pode ocorrer duplicidade da mensagem
-* Modo enable false &rarr; o kafka se vira e nunca você terá mensagens fora de ordem e nem duplicadas 
-***IMPORTANTE***: Para produtor indepodente ser habilitado o _Ack_ tem de ser -1 (ALL)
+### Producer idepotente  
+**Problema:**   
+Se ocorrer algo durante o processo de publicação da mensagem, o produtor pode enviar novamente e isso causar duplicidade da mensagem  
+* Modo enable true &rarr; o kafka se vira e nunca você terá mensagens fora de ordem e nem duplicadas
+* Modo enable false &rarr;  o tratamento de mensagens duplicadas tem de ser feito no _consumer_
+***IMPORTANTE***: Para produtor **idempotent**  ser habilitado o _Ack_ tem de ser -1 (ALL)
 
 ### Consumer e Consumer groups 
 * Os Consumers que estão no mesmo grupo leem as mensagens de forma distribuida de varias partiçoes 
 * Se o consumer não pertence a grupo nenhum ele irá consumir de todas as partições
-* Não tem como 2 consumidores que estão no mesmo grupo lerem a partição, deste caso cada consumidor lê uma partição
-* Melhor solução é ter a mesma quantidade de partições para a mesma quantidade de consumer no mesmo grupo 
+* Não tem como 2 consumidores que estão no mesmo grupo lerem a mesma partição, neste caso cada consumidor lê uma partição
+* se tiver mais 4 consumidores em um determinado grupo e tiver apenas 3 partições, um dos consumidores ficará IDLE (parado)
+* Melhor solução então é ter a mesma quantidade de partições para a mesma quantidade de consumer no mesmo grupo 
 
 
 ### COMANDOS DO KAFKA 
 **Criar um topico:**   
 ```kafka-topics --create --topic=<nome-do-topico> --bootstrap-server=<ip-do-servidor-kafka:9092> --partitions=<numero-de-partições> --replication-factor=<numero-de-replicas>```   
 **Importante** 
-_bootstrap-server_ e _replication\_factor_ são requeridos e i _replication\_factor_ não pode ser maior qua a quantidade de brokers.
+_bootstrap-server_ e _replication\_factor_ são requeridos e i _replication\_factor_ não pode ser maior qua a quantidade de brokers.  
+**nesta hora é que as partições são criadas**   
+
 
 **Listar os topicos existentes:**   
 ```kafka-topics --list --bootstrap-server=<ip-do-servidor>```   
@@ -93,8 +98,14 @@ _bootstrap-server_ e _replication\_factor_ são requeridos e i _replication\_fac
 _from\_beginning_ &rarr; le as mensagens desde o inicio (não garante a orderm pois lerá de todas as partições)    
 _--group_ &rarr; especifica o grupo de consumers que este deverá fazer parte, desta forma a "carga" será distribuida entre estes consumers.   
 
+quando não especificado o group, todas as mensagnes vão chegar para todos consumers "sem grupo", criando uma espécie de fanout. Utiliza-se assim quando 
+varios consumidores terão de fazer processamentos diferentes com a mesma mensagem.   
+para distribuir a carga, ou seja um consumer ler uma mensagem e processar e outro ler outra mensagem e processar, é necessário colocar os referidos consumers no mesmo grupo.
+
+![exemplo](./imagens/fanout.png "Exemplo")
+
 **kafka-console-producer**  
-**Produzir topicos  :**   
+**Produzir mensagens em um topico  :**   
 ```kafka-console-producer --topic=<nome-do-topico> --bootstrap-server=<ip-do-servidor> ```   
 
 ***Observações**  
@@ -105,7 +116,8 @@ _--group_ &rarr; especifica o grupo de consumers que este deverá fazer parte, d
 **kafka-consumer-groups**  
 **Descrever como estão organizados as partiçoes/offsets de um determinado grupo**   
 ```kafka-consumer-groups --bootstrap-server=<ip-do-servidor> -group=<nome-do-grupo> --describe```   
-
+* da pra ver qual partição cada consumer do grupo está lendo  
+* da pra ver qual o current off-set, quantas mensagens tem no total e quantas ainda faltam para ser lidas (lag)   
 
 ### Confluent control-center  
 http://localhost:9021   
@@ -116,22 +128,31 @@ Permite que a gente defina o formato de uma mensagem (utilizando o avro)
 
 ## Extensões vscode 
 * streetsidesoftware.avro  
-** kafka landoop
-http://localhost:3030/
-
-http://localhost:3030/kafka-topics-ui/#/cluster/fast-data-dev/topic/n/topico-teste/data
 
 
-** para consumir 
-docker exec -it kafka_kafka-cluster_1 bash 
-kafka-avro-console-consumer --topic topico-teste --bootstrap-server=localhost:9092 --from-beginning --property schema.registry.url=http://127.0.0.1:8081
+## kafka landoop  
+http://localhost:3030/  
+http://localhost:3030/kafka-topics-ui/#/cluster/fast-data-dev/topic/n/topico-teste/data  
+
+
+## Para consumir  
+```docker exec -it kafka_kafka-cluster_1 bash ```  
+``` kafka-avro-console-consumer --topic topico-teste --bootstrap-server=localhost:9092 --from-beginning --property schema.registry.url=http://127.0.0.1:8081 ```   
 
 
 ## Links interessantes 
+https://www.tutorialspoint.com/apache_kafka/index.htm
+https://docs.spring.io/spring-kafka/reference/html/#with-java-configuration-no-spring-boot
 https://avro.apache.org/docs/current/gettingstartedjava.html
 https://programadev.com.br/kafka-producer-avro/   
-https://github.com/guilhermegarcia86/kafka-series/tree/avro/register   
+https://github.com/guilhermegarcia86/kafka-series/tree/avro/register  
 https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md &rarr; parâmetros de configuração
+Global configuration (todos os parâmetros) &rarr https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
+https://betterprogramming.pub/adding-schema-registry-to-kafka-in-your-local-docker-environment-49ada28c8a9b
+https://docs.confluent.io/platform/current/schema-registry/schema_registry_tutorial.html
+https://qastack.com.br/programming/38024514/understanding-kafka-topics-and-partitions  
+https://medium.com/engenharia-arquivei/subindo-um-cluster-de-kafka-ffec258b1175#:~:text=Rodar%20o%20kafka%20em%20um,adequadamente%2C%20e%20iniciar%20o%20servi%C3%A7o.   
+
 
 ### para programar em outras linguagens sem ser java necessita biblioteca librdkafka
 https://github.com/edenhill/librdkafka &rarr; biblioteca rdkafka utilizada para comunicação com outras linguagens (exceto java, já que o kafka é nativo java)
